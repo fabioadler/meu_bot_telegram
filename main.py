@@ -5,6 +5,7 @@ bot=telebot.TeleBot(os.getenv('token'))
 fila_download=queue.Queue()
 threads=int(os.getenv('threads'))
 path_files=os.getenv('path')
+tam_files=int(os.getenv('tam_file'))
 comandos=[
 	telebot.types.BotCommand(command="start",description="Conhecer o bot"),
 	telebot.types.BotCommand(command="yt_dv",description="Para baixar video /yt_dv [url]"),
@@ -19,10 +20,10 @@ def bem_vindo_bot(mensagem):
 	bot.reply_to(mensagem,f"🧝🏼‍♀️ Olá, eu sou a {os.getenv('nome')}!\nE um prazer em te conhecer 🤝.")
 	
 @bot.message_handler(commands=['yt_dv'])
-def download(mensagem):
+def download_dv(mensagem):
 	partes=(mensagem.text).split(" ")
 	if(len(partes) >= 2):
-		url=partes[1]
+		url=((partes[1]).split("&"))[0]
 		if(('youtube.com' in url) or ('youtu.be' in url)):
 			fila_download.put((mensagem, url,"video"))
 			bot.reply_to(mensagem,f'✅ Pedido recebido\n🔗 Link: {url[:40]}\n🕔 Na fila atual: {fila_download.qsize()}')
@@ -32,10 +33,10 @@ def download(mensagem):
 		bot.reply_to(mensagem,'Precisa passar o link!')
 
 @bot.message_handler(commands=['yt_da'])
-def download(mensagem):
+def download_da(mensagem):
 	partes=(mensagem.text).split(" ")
 	if(len(partes) >= 2):
-		url=partes[1]
+		url=((partes[1]).split("&"))[0]
 		if(('youtube.com' in url) or ('youtu.be' in url)):
 			fila_download.put((mensagem, url,"audio"))
 			bot.reply_to(mensagem,f'✅ Pedido recebido\n🔗 Link: {url[:40]}\n🕔 Na fila atual: {fila_download.qsize()}')
@@ -66,14 +67,14 @@ def thread_download(thread_id):
 				print(f'thread {thread_id} processando ')
 				with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 					ydl.download(url)
-				if((os.path.getsize(nome_arquivo)/(1024*1024)) <= 50):
+				if((os.path.getsize(nome_arquivo)/(1024*1024)) <= tam_files):
 					with open(nome_arquivo,'rb') as video_file:
 						try:
 							bot.send_video(mensagem.chat.id,video_file,caption=f'🎬 Arquvo baixado com sucesso!')
 						except:
 							bot.send_document(mensagem.chat.id,video_file,caption=f'🎬 Arquvo baixado com sucesso!')
 				else:
-					bot.reply_to(mensagem,"❌ Infelistmente o seu arquivo tem mais de 50 MB, eu só posso mandar até 50 MB")
+					bot.reply_to(mensagem,f"❌ Infelistmente o seu arquivo tem mais de {tam_files} MB, eu só posso mandar até {tam_files} MB")
 				if(os.path.exists(nome_arquivo)):
 					os.remove(nome_arquivo)
 				else:
@@ -93,14 +94,14 @@ def thread_download(thread_id):
 				}
 				with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 					ydl.download(url)
-				if((os.path.getsize(nome_arquivo)/(1024*1024)) <= 50):
+				if((os.path.getsize(nome_arquivo)/(1024*1024)) <= tam_files):
 					with open(nome_arquivo,'rb') as audio_file:
 						try:
 							bot.send_audio(mensagem.chat.id,audio_file,caption=f'🎵 Arquvo baixado com sucesso!')
 						except:
 							bot.send_document(mensagem.chat.id,audio_file,caption=f'🎵 Arquvo baixado com sucesso!')
 				else:
-					bot.reply_to(mensagem,"❌ Infelistmente o seu arquivo tem mais de 50 MB, eu só posso mandar até 50 MB")
+					bot.reply_to(mensagem,f"❌ Infelistmente o seu arquivo tem mais de {tam_files} MB, eu só posso mandar até {tam_files} MB")
 				if(os.path.exists(nome_arquivo)):
 					os.remove(nome_arquivo)
 				else:
